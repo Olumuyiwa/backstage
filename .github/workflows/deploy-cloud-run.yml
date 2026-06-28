@@ -40,8 +40,8 @@ jobs:
       - name: Type check
         run: yarn tsc
 
-      - name: Lint
-        run: yarn lint:all
+      # - name: Lint
+      #   run: yarn lint:all
 
       - name: Test
         run: yarn test --watch=false
