@@ -46,8 +46,8 @@ jobs:
       - name: Test
         run: yarn test --watch=false
 
-      - name: Build backend
-        run: yarn build:backend
+      - name: Build all packages
+        run: yarn build:all
 
   security-scan:
     name: Security scan
@@ -100,8 +100,8 @@ jobs:
       - name: Type check
         run: yarn tsc
 
-      - name: Build backend
-        run: yarn build:backend
+      - name: Build all packages
+        run: yarn build:all
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
