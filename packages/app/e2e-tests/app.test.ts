@@ -25,6 +25,14 @@ test('App should render the welcome page', async ({ page }) => {
 
 test('Catalog page loads', async ({ page }) => {
   await page.goto('/catalog');
-  // await expect(page.getByText('My Org Catalog')).toBeVisible();
-  await page.waitForTimeout(5000); 
+  await page.waitForTimeout(5000);
+
+  // Click the Enter button
+  await page.getByRole('button', { name: 'Enter' }).click();
+
+  // Check the Home icon is visible
+  await expect(page.locator("//a[@aria-label='Home']//*[name()='svg']")).toBeVisible();
+
+  // Check Search text is visible
+  await expect(page.getByText('Search', { exact: true })).toBeVisible();
 });
