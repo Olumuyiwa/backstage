@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/security-scan
+      - upgrade/*
   pull_request:
     branches:
       - main
