@@ -31,7 +31,7 @@ backend:
   database:
     client: better-sqlite3
     connection:
-      filename: /tmp/backstage.sqlite
+      directory: /tmp
 
 auth:
   providers:
