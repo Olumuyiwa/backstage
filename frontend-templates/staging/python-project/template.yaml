@@ -38,7 +38,7 @@ spec:
       name: Fetch Python Boilerplate
       action: fetch:template
       input:
-        url: https://github.com/dev-santhus/python-boilerplate-skeleton/archive/refs/heads/main.zip
+        url: https://github.com/dev-santhus/python-boilerplate-skeleton/tree/main
         values:
           name: ${{ parameters.name }}
           description: ${{ parameters.description }}
