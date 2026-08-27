@@ -855,3 +855,183 @@ http://localhost:3000/catalog
 Expected result:
 demo-maven-app appears as a Component.
 
+
+Preferred approach: generate boilerplate skeletons with Copilot prompts
+The manual file-by-file steps above are useful for understanding what Backstage needs, but the faster working approach is:
+
+1. Create the skeleton repo in GitHub.
+2. Use GitHub Copilot's repository prompt to generate the framework starter files.
+3. Review the generated files to make sure the Backstage variables are preserved.
+4. Run the Backstage template from http://localhost:3000/create.
+
+Do not let Copilot remove these Backstage variables from skeleton files:
+
+${{ values.name }}
+${{ values.description }}
+${{ values.owner }}
+${{ values.repo }}
+${{ values.ownerEntity }}
+
+Stack-specific variables must also be preserved:
+
+Python/Django:
+No extra variable beyond the shared values above.
+
+Maven/Spring Boot:
+${{ values.groupId }}
+${{ values.artifactId }}
+
+Laravel:
+${{ values.packageName }}
+
+Copilot prompt for Python/Django skeleton
+Use this in dev-santhus/python-boilerplate-skeleton if the goal is a real Django starter instead of a tiny Python script:
+
+Replace this simple Python scaffold with a working Django starter project suitable for a Backstage scaffolder skeleton.
+
+Keep all Backstage template variables intact.
+
+Requirements:
+- Create a real Django project structure with:
+  - manage.py
+  - config/
+    - __init__.py
+    - settings.py
+    - urls.py
+    - wsgi.py
+    - asgi.py
+  - app/
+    - __init__.py
+    - views.py
+    - urls.py
+    - tests.py
+  - requirements.txt
+  - README.md
+  - catalog-info.yaml
+  - .gitignore
+
+Django behavior:
+- Use Django 5.x in requirements.txt
+- Add a simple route at "/" that returns "Hello from ${{ values.name }}"
+- Wire app.urls into config.urls
+- Use SQLite as the default local database
+- Keep settings simple and suitable for local development
+- Do not include secrets
+- Use a placeholder SECRET_KEY suitable only for local development
+- Set DEBUG=True for local development
+- Set ALLOWED_HOSTS to ["*"] for local testing
+
+Backstage requirements:
+- catalog-info.yaml must use:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+  owner: ${{ values.ownerEntity }}
+
+README requirements:
+- Include setup commands:
+  python -m venv .venv
+  .venv\Scripts\activate
+  pip install -r requirements.txt
+  python manage.py migrate
+  python manage.py runserver
+- Include test command:
+  python manage.py test
+
+Keep the project minimal but runnable. Do not add Docker, CI, Celery, Redis, PostgreSQL, or deployment config yet.
+
+Copilot prompt for Maven/Spring Boot skeleton
+Use this in dev-santhus/maven-boilerplate-skeleton to make the Maven template closer to Spring Initializr:
+
+Replace this plain Java Maven scaffold with a working Spring Boot Maven starter project, similar to a minimal Spring Initializr output.
+
+Keep it suitable for a Backstage scaffolder skeleton.
+
+Requirements:
+- Use Java 17
+- Use Spring Boot 3.x
+- Use Maven
+- Keep the package as com.example for now
+- Include:
+  - pom.xml
+  - src/main/java/com/example/Application.java
+  - src/main/java/com/example/HelloController.java
+  - src/test/java/com/example/ApplicationTests.java
+  - README.md
+  - catalog-info.yaml
+  - .gitignore
+
+Application behavior:
+- Application.java should use @SpringBootApplication
+- HelloController.java should expose GET "/" and return "Hello from ${{ values.name }}"
+- Tests should verify the Spring context loads
+
+Backstage requirements:
+- pom.xml must use:
+  groupId: ${{ values.groupId }}
+  artifactId: ${{ values.artifactId }}
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+- catalog-info.yaml must use:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+  owner: ${{ values.ownerEntity }}
+
+README requirements:
+- Include build command:
+  mvn clean package
+- Include test command:
+  mvn test
+- Include run command:
+  mvn spring-boot:run
+
+Do not add Docker, CI, Kubernetes, database config, or cloud deployment yet. Keep it minimal and runnable locally.
+
+Copilot prompt for Laravel skeleton
+Use this in dev-santhus/laravel-boilerplate-skeleton:
+
+Replace this minimal PHP scaffold with a real Laravel application skeleton similar to what `laravel new` or `composer create-project laravel/laravel` creates.
+
+Keep it suitable for a Backstage scaffolder skeleton.
+
+Requirements:
+- Include normal Laravel folders:
+  - app
+  - bootstrap
+  - config
+  - database
+  - public
+  - resources
+  - routes
+  - storage
+  - tests
+- Include artisan
+- Include composer.json
+- Include phpunit.xml
+- Include public/index.php
+- Include routes/web.php with a simple route returning "Hello from ${{ values.name }}"
+- Include README.md with install, test, and run commands
+- Include catalog-info.yaml using these Backstage variables:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+  owner: ${{ values.ownerEntity }}
+- In composer.json, use package name "${{ values.packageName }}"
+- Do not include real secrets
+- Do not include a committed .env file
+- Include .env.example only
+- Keep database config standard Laravel defaults
+- Keep the project simple and runnable with:
+  composer install
+  cp .env.example .env
+  php artisan key:generate
+  php artisan serve
+
+After Copilot creates the files, verify:
+- Laravel has artisan, routes/web.php, config/, bootstrap/, and .env.example.
+- Spring Boot has Application.java, HelloController.java, and spring-boot-starter dependencies.
+- Django has manage.py, config/settings.py, config/urls.py, and app/views.py.
+- catalog-info.yaml still contains the Backstage variables.
+- No real secrets or .env files were committed.
+

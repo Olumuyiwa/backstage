@@ -9,3 +9,4 @@ spec:
     - ./maven-project/template.yaml
     - ./reactvite-project/template.yaml
     - ./python-project/template.yaml
+    - ./laravel-project/template.yaml
