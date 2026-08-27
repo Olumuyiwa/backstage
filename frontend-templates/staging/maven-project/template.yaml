@@ -1,0 +1,85 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: maven-project
+  title: Maven Project
+  description: Create a Maven application from the standard boilerplate skeleton
+spec:
+  owner: user:default/backstage-guest
+  type: service
+
+  parameters:
+    - title: Project details
+      required:
+        - name
+        - repo
+        - groupId
+        - artifactId
+      properties:
+        name:
+          title: Project Name
+          type: string
+          description: Name of the Maven application
+          pattern: '^[a-z0-9-]+$'
+        description:
+          title: Description
+          type: string
+          description: Short description of the Maven application
+        ownerEntity:
+          title: Owner
+          type: string
+          default: user:default/backstage-guest
+        repo:
+          title: Repository Name
+          type: string
+          description: GitHub repository name to create
+          pattern: '^[a-z0-9-]+$'
+        groupId:
+          title: Group ID
+          type: string
+          description: Maven group ID, for example com.example
+          default: com.example
+        artifactId:
+          title: Artifact ID
+          type: string
+          description: Maven artifact ID, usually the project name
+          pattern: '^[a-z0-9-]+$'
+
+  steps:
+    - id: fetch-base
+      name: Fetch Maven Boilerplate
+      action: fetch:template
+      input:
+        url: https://github.com/dev-santhus/maven-boilerplate-skeleton/tree/main
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: dev-santhus
+          repo: ${{ parameters.repo }}
+          ownerEntity: ${{ parameters.ownerEntity }}
+          groupId: ${{ parameters.groupId }}
+          artifactId: ${{ parameters.artifactId }}
+
+    - id: publish
+      name: Publish To GitHub
+      action: publish:github
+      input:
+        repoUrl: github.com?owner=dev-santhus&repo=${{ parameters.repo }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        repoVisibility: public
+
+    - id: register
+      name: Register In Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open In Catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}

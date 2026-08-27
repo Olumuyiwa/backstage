@@ -558,3 +558,300 @@ backend:
 
 That means catalog entries reset after every restart. GitHub discovery must run successfully after restart for GitHub-imported entities to reappear.
 
+
+Tested Maven/Java template walkthrough for this repo
+This section records the exact working path followed for issue #15:
+"Create a boilerplate code for maven like Spring initializr".
+
+Acceptance criteria from the issue:
+1. Create a repo called maven-boilerplate-skeleton.
+2. Add essential files and folders in the repo.
+3. Create a template that uses maven-boilerplate-skeleton to create Maven projects.
+
+1. Create the skeleton repository
+In GitHub, create:
+
+dev-santhus/maven-boilerplate-skeleton
+
+Recommended settings:
+Owner: dev-santhus
+Repository name: maven-boilerplate-skeleton
+Visibility: Public
+Add README: Yes
+Add .gitignore: Java
+License: No license
+Description: Maven boilerplate skeleton for Backstage scaffolder templates
+
+What this repo does:
+It is the source skeleton that Backstage copies when a developer creates a new Maven app.
+
+2. Add pom.xml to the skeleton repo
+Create pom.xml at the root:
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>${{ values.groupId }}</groupId>
+  <artifactId>${{ values.artifactId }}</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+
+  <name>${{ values.name }}</name>
+  <description>${{ values.description }}</description>
+
+  <properties>
+    <maven.compiler.release>17</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <junit.jupiter.version>5.11.4</junit.jupiter.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.5.2</version>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+
+What this does:
+Defines a Java 17 Maven project with JUnit 5 for tests. Backstage replaces the values.* placeholders during scaffolding.
+
+3. Add the main Java source file
+Create:
+
+src/main/java/com/example/App.java
+
+Content:
+
+package com.example;
+
+public class App {
+    public String greeting() {
+        return "Hello from ${{ values.name }}";
+    }
+
+    public static void main(String[] args) {
+        System.out.println(new App().greeting());
+    }
+}
+
+What this does:
+Creates a simple Java application entrypoint. Backstage replaces ${{ values.name }} with the project name.
+
+4. Add a unit test
+Create:
+
+src/test/java/com/example/AppTest.java
+
+Content:
+
+package com.example;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.junit.jupiter.api.Test;
+
+class AppTest {
+    @Test
+    void greetingIncludesProjectName() {
+        App app = new App();
+
+        assertTrue(app.greeting().contains("${{ values.name }}"));
+    }
+}
+
+What this does:
+Adds a JUnit 5 test that checks the generated app greeting includes the project name.
+
+5. Add catalog-info.yaml to the skeleton repo
+Create catalog-info.yaml at the root:
+
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.name }}
+  description: ${{ values.description }}
+  annotations:
+    github.com/project-slug: ${{ values.owner }}/${{ values.repo }}
+spec:
+  type: service
+  lifecycle: experimental
+  owner: ${{ values.ownerEntity }}
+
+What this does:
+Every generated Maven repo gets its own Backstage catalog descriptor, so it can be registered automatically after publishing.
+
+6. Create or update the Backstage Maven template locally
+In this repo, use:
+
+frontend-templates/staging/maven-project/template.yaml
+
+Working content:
+
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: maven-project
+  title: Maven Project
+  description: Create a Maven application from the standard boilerplate skeleton
+spec:
+  owner: user:default/backstage-guest
+  type: service
+
+  parameters:
+    - title: Project details
+      required:
+        - name
+        - repo
+        - groupId
+        - artifactId
+      properties:
+        name:
+          title: Project Name
+          type: string
+          description: Name of the Maven application
+          pattern: '^[a-z0-9-]+$'
+        description:
+          title: Description
+          type: string
+          description: Short description of the Maven application
+        ownerEntity:
+          title: Owner
+          type: string
+          default: user:default/backstage-guest
+        repo:
+          title: Repository Name
+          type: string
+          description: GitHub repository name to create
+          pattern: '^[a-z0-9-]+$'
+        groupId:
+          title: Group ID
+          type: string
+          description: Maven group ID, for example com.example
+          default: com.example
+        artifactId:
+          title: Artifact ID
+          type: string
+          description: Maven artifact ID, usually the project name
+          pattern: '^[a-z0-9-]+$'
+
+  steps:
+    - id: fetch-base
+      name: Fetch Maven Boilerplate
+      action: fetch:template
+      input:
+        url: https://github.com/dev-santhus/maven-boilerplate-skeleton/tree/main
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          owner: dev-santhus
+          repo: ${{ parameters.repo }}
+          ownerEntity: ${{ parameters.ownerEntity }}
+          groupId: ${{ parameters.groupId }}
+          artifactId: ${{ parameters.artifactId }}
+
+    - id: publish
+      name: Publish To GitHub
+      action: publish:github
+      input:
+        repoUrl: github.com?owner=dev-santhus&repo=${{ parameters.repo }}
+        description: ${{ parameters.description }}
+        defaultBranch: main
+        repoVisibility: public
+
+    - id: register
+      name: Register In Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps.publish.output.repoContentsUrl }}
+        catalogInfoPath: /catalog-info.yaml
+
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps.publish.output.remoteUrl }}
+      - title: Open In Catalog
+        icon: catalog
+        entityRef: ${{ steps.register.output.entityRef }}
+
+What this does:
+Fetches the Maven skeleton, creates a new GitHub repo in dev-santhus, pushes the generated Maven files, and registers the generated catalog-info.yaml in Backstage.
+
+7. Confirm template-locations.yaml includes Maven
+Update or confirm:
+
+frontend-templates/staging/template-locations.yaml
+
+It must include:
+
+apiVersion: backstage.io/v1alpha1
+kind: Location
+metadata:
+  name: templates
+  description: All templates
+spec:
+  targets:
+    - ./backstage-user/template.yaml
+    - ./maven-project/template.yaml
+    - ./reactvite-project/template.yaml
+    - ./python-project/template.yaml
+
+What this does:
+Makes Backstage load the Maven Project template on the Create page.
+
+8. Restart Backstage
+From the repo root:
+
+corepack yarn start
+
+What this does:
+Starts Backstage and reloads the Maven template.
+
+9. Verify the template appears
+Open:
+
+http://localhost:3000/create
+
+Expected result:
+Maven Project appears on the Create page.
+
+10. Test Maven project creation
+Use test values:
+
+Project Name: demo-maven-app
+Description: Demo Maven app created from Backstage
+Owner: user:default/backstage-guest
+Repository Name: demo-maven-app
+Group ID: com.example
+Artifact ID: demo-maven-app
+
+Expected result:
+Backstage fetches the skeleton, creates dev-santhus/demo-maven-app, pushes the files, and registers the generated catalog-info.yaml.
+
+11. Verify the generated repo
+Open the dev-santhus organisation in GitHub.
+
+Expected result:
+demo-maven-app appears as a new repository.
+
+12. Verify the generated component in Backstage
+Open:
+
+http://localhost:3000/catalog
+
+Expected result:
+demo-maven-app appears as a Component.
+
