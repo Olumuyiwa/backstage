@@ -112,6 +112,18 @@ scaffolder:
   # see https://backstage.io/docs/features/software-templates/configuration for software template options
 
 catalog:
+  providers:
+    github:
+      githubOrgDiscovery:
+        organization: dev-santhus
+        catalogPath: /catalog-info.yaml
+        filters:
+          branch: main
+          repository: .*
+        schedule:
+          frequency: { minutes: 30 }
+          timeout: { minutes: 3 }
+
   import:
     entityFilename: catalog-info.yaml
     pullRequestBranchName: backstage-integration
