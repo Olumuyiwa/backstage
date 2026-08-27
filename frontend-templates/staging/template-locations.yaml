@@ -8,3 +8,4 @@ spec:
     - ./backstage-user/template.yaml
     - ./maven-project/template.yaml
     - ./reactvite-project/template.yaml
+    - ./python-project/template.yaml
